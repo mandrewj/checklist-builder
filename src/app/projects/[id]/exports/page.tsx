@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { and, desc, eq } from "drizzle-orm";
 import { Download, Lock } from "lucide-react";
 import { db } from "@/lib/db/client";
@@ -145,13 +144,19 @@ export default async function ExportsPage({ params }: ExportsPageProps) {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {artifact && (
-                    <Link
+                    // Plain <a> (not next/link): the route returns a file with
+                    // Content-Disposition: attachment. next/link would treat
+                    // this as a client-side navigation and dedupe repeat clicks
+                    // to the same URL, so the second download silently no-ops
+                    // until a full refresh. A real anchor re-requests every click.
+                    <a
                       href={`/api/blob/${artifact.id}`}
+                      download
                       className="inline-flex items-center gap-1.5 rounded-md border border-surface-3 bg-surface-0 px-3 py-1.5 text-xs font-bold text-blue-600 shadow-card hover:bg-blue-50 hover:text-blue-700"
                     >
                       <Download className="size-3.5" aria-hidden />
                       Download
-                    </Link>
+                    </a>
                   )}
                   <GenerateButton
                     projectId={projectId}
