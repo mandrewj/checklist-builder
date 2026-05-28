@@ -2,8 +2,8 @@
  * Manuscript-draft DOCX export. Built with the `docx` library (which Word
  * round-trips faithfully). Section structure mirrors EXPORTS.md §"DOCX".
  *
- * Maps are embedded as PNGs rasterized from the same SVG component used on
- * screen via sharp. ~12 species × ~80 KB PNG = ~1 MB doc — fine.
+ * Maps + phenology charts are embedded as PNGs rasterized (via resvg with
+ * bundled Lato fonts) from the same SVG builders used on screen.
  */
 
 import {
@@ -21,7 +21,6 @@ import {
   TableRow,
   WidthType,
 } from "docx";
-import sharp from "sharp";
 import { buildSpeciesSvg, SPECIES_SVG_DIMENSIONS } from "./species-svg";
 import {
   buildPhenologySvg,
@@ -30,6 +29,7 @@ import {
   PHENOLOGY_SVG_DIMENSIONS,
 } from "./phenology-svg";
 import { regionGeometryFor, regionOutlinesFor } from "./region-geometry";
+import { rasterizeAllInParallel } from "./rasterize";
 import { regionDescriptor } from "@/lib/insectid/regions";
 import type { ProjectSnapshot } from "./snapshot";
 import type { TaxonRow } from "@/lib/db/schema";
@@ -52,34 +52,6 @@ const PHENOLOGY_DOC_HEIGHT = Math.round(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function rasterize(svg: string): Promise<Buffer> {
-  return sharp(Buffer.from(svg))
-    .resize({ width: MAP_PIXEL_WIDTH })
-    .png()
-    .toBuffer();
-}
-
-const RASTER_CONCURRENCY = 4;
-
-async function rasterizeAllInParallel(
-  jobs: ReadonlyArray<{ id: string; svg: string }>,
-): Promise<Map<string, Buffer>> {
-  const out = new Map<string, Buffer>();
-  let cursor = 0;
-  async function worker() {
-    while (cursor < jobs.length) {
-      const i = cursor++;
-      const job = jobs[i];
-      const png = await rasterize(job.svg);
-      out.set(job.id, png);
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(RASTER_CONCURRENCY, jobs.length) }, worker),
-  );
-  return out;
-}
 
 function h1(text: string): Paragraph {
   return new Paragraph({
@@ -646,10 +618,10 @@ export async function buildDocxExport(snapshot: ProjectSnapshot): Promise<Buffer
       };
     })
     .filter((x): x is { id: string; svg: string } => x !== null);
-  const pngByJobId = await rasterizeAllInParallel([
-    ...mapJobs,
-    ...phenologyJobs,
-  ]);
+  const pngByJobId = await rasterizeAllInParallel(
+    [...mapJobs, ...phenologyJobs],
+    MAP_PIXEL_WIDTH,
+  );
   const pngByTaxonId = new Map<string, Buffer>();
   const phenologyPngByTaxonId = new Map<string, Buffer>();
   for (const [k, v] of pngByJobId) {

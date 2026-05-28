@@ -15,11 +15,11 @@
  */
 
 import JSZip from "jszip";
-import sharp from "sharp";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { buildSpeciesSvg, slugify } from "./species-svg";
 import { buildPhenologySvg, bucketByMonth, dateRangeOf } from "./phenology-svg";
 import { regionGeometryFor, regionOutlinesFor } from "./region-geometry";
+import { rasterizeAllInParallel } from "./rasterize";
 import type { ProjectSnapshot } from "./snapshot";
 import type { TaxonRow } from "@/lib/db/schema";
 
@@ -32,8 +32,6 @@ const PAGE_W = 612; // letter, points
 const PAGE_H = 792;
 const PAGE_MARGIN = 36;
 
-const RASTER_CONCURRENCY = 4;
-
 interface SpeciesArtifact {
   taxon: Pick<TaxonRow, "id" | "scientificName" | "authority">;
   slug: string;
@@ -41,35 +39,6 @@ interface SpeciesArtifact {
   png: Buffer;
   phenologySvg: string | null;
   phenologyPng: Buffer | null;
-}
-
-async function rasterize(svg: string): Promise<Buffer> {
-  return sharp(Buffer.from(svg))
-    .resize({ width: RASTER_WIDTH_PX })
-    .png({ compressionLevel: 6 })
-    .toBuffer();
-}
-
-async function rasterizeAllInParallel(
-  jobs: ReadonlyArray<{ id: string; svg: string }>,
-): Promise<Map<string, Buffer>> {
-  const out = new Map<string, Buffer>();
-  let cursor = 0;
-  async function worker() {
-    while (cursor < jobs.length) {
-      const i = cursor++;
-      const job = jobs[i];
-      const png = await rasterize(job.svg);
-      out.set(job.id, png);
-    }
-  }
-  await Promise.all(
-    Array.from(
-      { length: Math.min(RASTER_CONCURRENCY, jobs.length) },
-      worker,
-    ),
-  );
-  return out;
 }
 
 /** Build a single-page letter PDF with the species PNG centered + a title. */
@@ -243,7 +212,7 @@ export async function buildMapsExport(
     ...svgs,
     ...phenologySvgs.map((p) => ({ id: `phenology:${p.id}`, svg: p.svg })),
   ];
-  const pngByJobId = await rasterizeAllInParallel(allJobs);
+  const pngByJobId = await rasterizeAllInParallel(allJobs, RASTER_WIDTH_PX);
 
   const artifacts: SpeciesArtifact[] = includedTaxa.map((t) => {
     const png = pngByJobId.get(t.id);
