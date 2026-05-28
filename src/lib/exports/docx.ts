@@ -34,10 +34,15 @@ import { regionDescriptor } from "@/lib/insectid/regions";
 import type { ProjectSnapshot } from "./snapshot";
 import type { TaxonRow } from "@/lib/db/schema";
 
-const BLUE_800 = "0A3F95";
+// Manuscript palette: color is reserved for section headers + the title page
+// (HEADER). All body content is BLACK; hierarchy comes from bold/italic/size.
+// Times New Roman for broad Word interoperability.
+const HEADER = "0A3F95"; // blue-800, headers + title only
+const BLACK = "000000";
+const MANUSCRIPT_FONT = "Times New Roman";
+// Retained for the title-page secondary lines only.
 const TEXT_600 = "1F2222";
 const TEXT_400 = "6D6F6E";
-const TEXT_300 = "A5A5A5";
 
 const MAP_PIXEL_WIDTH = 900;
 const MAP_DOC_WIDTH = 480;
@@ -56,7 +61,7 @@ const PHENOLOGY_DOC_HEIGHT = Math.round(
 function h1(text: string): Paragraph {
   return new Paragraph({
     children: [
-      new TextRun({ text, bold: true, color: BLUE_800, size: 40 }),
+      new TextRun({ text, bold: true, color: HEADER, size: 40 }),
     ],
     heading: HeadingLevel.HEADING_1,
     spacing: { after: 200 },
@@ -70,7 +75,7 @@ function h2(text: string, opts: { italic?: boolean } = {}): Paragraph {
         text,
         bold: true,
         italics: opts.italic ?? false,
-        color: BLUE_800,
+        color: HEADER,
         size: 28,
       }),
     ],
@@ -82,7 +87,7 @@ function h2(text: string, opts: { italic?: boolean } = {}): Paragraph {
 function h3(text: string): Paragraph {
   return new Paragraph({
     children: [
-      new TextRun({ text, bold: true, color: TEXT_600, size: 22 }),
+      new TextRun({ text, bold: true, color: HEADER, size: 22 }),
     ],
     heading: HeadingLevel.HEADING_3,
     spacing: { before: 200, after: 80 },
@@ -98,7 +103,7 @@ function body(
       new TextRun({
         text,
         italics: opts.italic ?? false,
-        color: opts.color ?? TEXT_600,
+        color: opts.color ?? BLACK,
         size: 22,
       }),
     ],
@@ -112,7 +117,7 @@ function placeholder(prompt: string): Paragraph {
       new TextRun({
         text: prompt,
         italics: true,
-        color: TEXT_300,
+        color: BLACK,
         size: 20,
       }),
     ],
@@ -125,7 +130,7 @@ function caption(text: string): Paragraph {
     alignment: AlignmentType.CENTER,
     spacing: { before: 80, after: 240 },
     children: [
-      new TextRun({ text, italics: true, color: TEXT_400, size: 18 }),
+      new TextRun({ text, italics: true, color: BLACK, size: 18 }),
     ],
   });
 }
@@ -138,7 +143,7 @@ function smallCell(text: string, opts: { bold?: boolean } = {}): TableCell {
           new TextRun({
             text,
             bold: opts.bold ?? false,
-            color: TEXT_600,
+            color: BLACK,
             size: 18,
           }),
         ],
@@ -182,7 +187,7 @@ function titlePage(snapshot: ProjectSnapshot, regionLabel: string): Paragraph[] 
         new TextRun({
           text: p.name,
           bold: true,
-          color: BLUE_800,
+          color: HEADER,
           size: 56,
         }),
       ],
@@ -331,7 +336,7 @@ function checklistByFamily(taxa: ReadonlyArray<TaxonRow>): Paragraph[] {
           new TextRun({
             text: family,
             bold: true,
-            color: BLUE_800,
+            color: BLACK,
             size: 24,
           }),
         ],
@@ -345,10 +350,10 @@ function checklistByFamily(taxa: ReadonlyArray<TaxonRow>): Paragraph[] {
         new Paragraph({
           spacing: { after: 40 },
           children: [
-            new TextRun({ text: t.scientificName, italics: true, color: TEXT_600, size: 22 }),
+            new TextRun({ text: t.scientificName, italics: true, color: BLACK, size: 22 }),
             new TextRun({
               text: t.authority ? ` ${t.authority}` : "",
-              color: TEXT_400,
+              color: BLACK,
               size: 22,
             }),
           ],
@@ -382,12 +387,12 @@ function speciesAccount(
           text: taxon.scientificName,
           italics: true,
           bold: true,
-          color: BLUE_800,
+          color: BLACK,
           size: 28,
         }),
         new TextRun({
           text: ` ${taxon.authority ?? ""}`.trimEnd(),
-          color: BLUE_800,
+          color: BLACK,
           size: 28,
         }),
       ],
@@ -400,7 +405,7 @@ function speciesAccount(
       ]
         .filter(Boolean)
         .join(" · "),
-      { color: TEXT_400 },
+      { color: BLACK },
     ),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -677,7 +682,7 @@ export async function buildDocxExport(snapshot: ProjectSnapshot): Promise<Buffer
       children.push(
         new Paragraph({
           spacing: { after: 120 },
-          children: [new TextRun({ text: cite, color: TEXT_600, size: 22 })],
+          children: [new TextRun({ text: cite, color: BLACK, size: 22 })],
         }),
       );
     }
@@ -703,7 +708,7 @@ export async function buildDocxExport(snapshot: ProjectSnapshot): Promise<Buffer
     description: `Manuscript draft generated from snapshot ${snapshot.snapshotId}`,
     styles: {
       default: {
-        document: { run: { font: "Lato" } },
+        document: { run: { font: MANUSCRIPT_FONT } },
       },
     },
     sections: [{ children }],

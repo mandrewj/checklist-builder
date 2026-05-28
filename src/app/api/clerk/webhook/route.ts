@@ -15,6 +15,7 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
+import { resolveIdentity } from "@/lib/auth/user-identity";
 
 export async function POST(req: Request) {
   const secret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
@@ -49,21 +50,25 @@ export async function POST(req: Request) {
     case "user.created":
     case "user.updated": {
       const u = evt.data;
-      const email = u.email_addresses?.[0]?.email_address ?? `${u.id}@unknown.local`;
-      const first = u.first_name?.trim() ?? "";
-      const last = u.last_name?.trim() ?? "";
-      const displayName =
-        [first, last].filter(Boolean).join(" ") || u.username || email;
-      const initials =
-        ((first[0] ?? "") + (last[0] ?? "")).toUpperCase() ||
-        displayName.slice(0, 2).toUpperCase();
+      const id = resolveIdentity(u);
+      // Always keep email fresh. Only (re)write displayName/initials when we
+      // actually resolved a real name — otherwise a name-less Clerk profile
+      // would clobber a good name (e.g. one set via seed:adopt) with an
+      // email-derived fallback on every sign-in.
+      const set: Partial<typeof users.$inferInsert> = { email: id.email };
+      if (id.hasRealName) {
+        set.displayName = id.displayName;
+        set.initials = id.initials;
+      }
       await db
         .insert(users)
-        .values({ id: u.id, email, displayName, initials })
-        .onConflictDoUpdate({
-          target: users.id,
-          set: { email, displayName, initials },
-        });
+        .values({
+          id: u.id,
+          email: id.email,
+          displayName: id.displayName,
+          initials: id.initials,
+        })
+        .onConflictDoUpdate({ target: users.id, set });
       break;
     }
     case "user.deleted": {

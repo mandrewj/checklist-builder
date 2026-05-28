@@ -19,6 +19,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { eq, sql } from "drizzle-orm";
 import ws from "ws";
 import * as schema from "../src/lib/db/schema";
+import { deriveInitials } from "../src/lib/auth/user-identity";
 
 const clerkId = process.argv[2];
 const argEmail = process.argv[3];
@@ -43,26 +44,38 @@ async function main() {
   const db = drizzle({ client: pool, schema, casing: "snake_case" });
 
   // Normally the Clerk webhook mirrors the user on user.created. If the row
-  // isn't there yet (signed up before the webhook was configured), create a
-  // minimal one — the webhook will correct email/name on the next update.
+  // isn't there yet (signed up before the webhook was configured), create one.
+  // When a name is provided, set displayName + initials (e.g. "Andrew
+  // Johnston" → "AJ") on both the create and the update path so an existing
+  // email-derived row gets fixed.
   let user = await db.query.users.findFirst({
     where: eq(schema.users.id, clerkId!),
   });
+  const nameProvided = (argName ?? argEmail) !== undefined;
+  const displayName = argName ?? argEmail ?? "Lab Lead";
+  const initials = deriveInitials(displayName);
+
   if (!user) {
     const email = argEmail ?? `${clerkId}@placeholder.local`;
-    const displayName = argName ?? argEmail ?? "Lab Lead";
-    const initials = displayName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "ME";
-    console.log(`[adopt] user ${clerkId} not found — creating row (${displayName})`);
+    console.log(`[adopt] user ${clerkId} not found — creating row (${displayName}, ${initials})`);
     const [created] = await db
       .insert(schema.users)
       .values({ id: clerkId!, email, displayName, initials })
       .returning();
     user = created;
+  } else if (nameProvided) {
+    console.log(`[adopt] updating ${clerkId} → ${displayName} (${initials})`);
+    const set: { displayName: string; initials: string; email?: string } = {
+      displayName,
+      initials,
+    };
+    if (argEmail) set.email = argEmail;
+    const [updated] = await db
+      .update(schema.users)
+      .set(set)
+      .where(eq(schema.users.id, clerkId!))
+      .returning();
+    user = updated;
   }
 
   // Re-point ownership.
