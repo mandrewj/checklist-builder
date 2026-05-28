@@ -175,6 +175,13 @@ docs/archive/       Original Claude Code design handoff (frozen reference)
 - **Lato** body + headings; categorical palette = Okabe-Ito; sequential palette = viridis.
 - **Desktop-first** (≥1280px assumed for the workspace).
 
+## Roadmap
+
+- **Public report page** — a clean, report-style read-only view of a project,
+  publishable to the web, separate from the portal/workspace UI. The data gate
+  (`isPublic` + `getProjectAccess`) already exists; this is a new presentation
+  layer.
+
 ## License
 
 MIT (intended). Reference dataset (Tenebrionidae of Indiana) curated for development only — not a primary biodiversity source.

@@ -1,5 +1,6 @@
 allowBuilds:
   '@clerk/shared': true
+  '@resvg/resvg-js': true
   esbuild: true
   msw: true
   sharp: true

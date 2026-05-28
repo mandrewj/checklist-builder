@@ -55,7 +55,32 @@ for export artifacts. GBIF + iNat APIs (no keys; polite UA + rate limits).
   categorical = Okabe-Ito, sequential = viridis; Lato; desktop-first (≥1280px).
 - Exports run against an immutable `lockedSnapshotId`.
 
+## Export specifics
+
+- **PNG/DOCX rasterization uses `@resvg/resvg-js`** (`src/lib/exports/rasterize.ts`)
+  with Lato TTFs bundled in `public/fonts/` passed as explicit `fontFiles` —
+  NOT sharp/librsvg, which depends on system fontconfig and rendered tofu on
+  Vercel. resvg is in `serverExternalPackages` (native binding). Don't reintroduce
+  sharp for SVG text.
+- **Export artifacts persist via Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set,
+  else local fs (`src/lib/exports/blob-store.ts`). Download route `/api/blob/[id]`
+  is an auth-gated proxy — use a plain `<a download>`, never `next/link` (it
+  dedupes repeat downloads).
+- **DOCX is manuscript-styled**: Times New Roman; blue only on section headers +
+  title page; all other text black with bold/italic for emphasis.
+- **User name + initials** come from Clerk's name via `src/lib/auth/user-identity.ts`
+  (`deriveInitials`: first+last token → "AJ"), email only as last resort. The
+  webhook won't downgrade a real name to an email.
+
+## Planned / not yet built
+
+- **Public report page** — a clean, report-style read-only page for a project
+  (publishable to the web), distinct from the portal/workspace UI. The `isPublic`
+  flag + `getProjectAccess` "public" path already exist; this is a new presentation
+  layer (e.g. `/r/[id]` or `/projects/[id]/report`), not a new data gate.
+
 ## Structure
 
 `src/app` routes · `src/lib/{actions,auth,db,exports,geo,insectid,jobs,sources,seed}`
-· `public/topojson` bundled geometry · `scripts/` ops · `drizzle/` migrations.
+· `public/topojson` bundled geometry · `public/fonts` Lato TTFs · `scripts/` ops
+· `drizzle/` migrations.
