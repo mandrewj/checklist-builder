@@ -9,6 +9,7 @@
  * ownership to a real user.
  */
 
+import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
@@ -55,11 +56,26 @@ export async function getCurrentUser(): Promise<UserRow | null> {
   return row ?? null;
 }
 
+/**
+ * Whether the signed-in caller is a super-user. Memoized per request so the
+ * admin lookup doesn't fan out across every getMembership call.
+ */
+export const isCurrentUserAdmin = cache(async (): Promise<boolean> => {
+  const uid = await getCurrentUserId();
+  if (!uid) return false;
+  const u = await db.query.users.findFirst({
+    where: eq(users.id, uid),
+    columns: { isAdmin: true },
+  });
+  return u?.isAdmin ?? false;
+});
+
 export async function getMembership(
   projectId: string,
   userId?: string,
 ): Promise<MembershipRow | null> {
-  const uid = userId ?? (await getCurrentUserId());
+  const currentUid = await getCurrentUserId();
+  const uid = userId ?? currentUid;
   if (!uid) return null;
   const row = await db.query.memberships.findFirst({
     where: and(
@@ -67,7 +83,20 @@ export async function getMembership(
       eq(memberships.userId, uid),
     ),
   });
-  return row ?? null;
+  if (row) return row;
+
+  // Super-user: synthesize a Lead membership on any project they aren't an
+  // explicit member of. Only for the *current* signed-in user — never for
+  // an arbitrary userId lookup (e.g. when inspecting another member's role).
+  if (uid === currentUid && (await isCurrentUserAdmin())) {
+    return {
+      projectId,
+      userId: uid,
+      role: "Lead",
+      joinedAt: new Date(0),
+    } satisfies MembershipRow;
+  }
+  return null;
 }
 
 export async function requireRole(

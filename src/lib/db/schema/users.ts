@@ -1,4 +1,10 @@
-import { pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable(
   "users",
@@ -7,6 +13,9 @@ export const users = pgTable(
     email: text("email").notNull(),
     displayName: text("display_name").notNull(),
     initials: text("initials").notNull(),
+    // Super-user: treated as Lead on every project and sees all projects on
+    // the dashboard. Granted out-of-band via `pnpm set-admin <clerk-id>`.
+    isAdmin: boolean("is_admin").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

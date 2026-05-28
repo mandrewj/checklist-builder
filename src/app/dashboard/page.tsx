@@ -29,17 +29,33 @@ interface ProjectCardRow extends ProjectRow {
   members: ReadonlyArray<Pick<UserRow, "initials" | "displayName">>;
 }
 
-async function loadDashboardData(userId: string): Promise<ProjectCardRow[]> {
-  // Step 1 — projects the user has a membership on, plus the role.
-  const userProjects = await db
-    .select({
-      project: projects,
-      role: memberships.role,
-    })
-    .from(projects)
-    .innerJoin(memberships, eq(memberships.projectId, projects.id))
-    .where(eq(memberships.userId, userId))
-    .orderBy(desc(projects.updatedAt));
+async function loadDashboardData(
+  userId: string,
+  isAdmin: boolean,
+): Promise<ProjectCardRow[]> {
+  // Step 1 — projects to show. Members see their own; admins see every
+  // project (left-joining their own membership so the badge reflects an
+  // explicit role when they have one, else Lead via the super-user rule).
+  const userProjects = isAdmin
+    ? (
+        await db
+          .select({ project: projects, role: memberships.role })
+          .from(projects)
+          .leftJoin(
+            memberships,
+            and(
+              eq(memberships.projectId, projects.id),
+              eq(memberships.userId, userId),
+            ),
+          )
+          .orderBy(desc(projects.updatedAt))
+      ).map((r) => ({ project: r.project, role: r.role ?? ("Lead" as const) }))
+    : await db
+        .select({ project: projects, role: memberships.role })
+        .from(projects)
+        .innerJoin(memberships, eq(memberships.projectId, projects.id))
+        .where(eq(memberships.userId, userId))
+        .orderBy(desc(projects.updatedAt));
 
   if (userProjects.length === 0) return [];
 
@@ -131,17 +147,25 @@ function roleBadgeVariant(role: MembershipRow["role"]) {
 export default async function DashboardPage() {
   const me = await getCurrentUser();
   if (!me) redirect("/sign-in");
-  const projectsForMe = await loadDashboardData(me.id);
+  const isAdmin = me.isAdmin;
+  const projectsForMe = await loadDashboardData(me.id, isAdmin);
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-10">
       <header className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <span className="eyebrow">Dashboard</span>
-          <h1 className="rule text-3xl font-black">Your projects</h1>
+          <h1 className="rule text-3xl font-black">
+            {isAdmin ? "All projects" : "Your projects"}
+          </h1>
           <p className="text-sm text-text-400">
             Signed in as <strong className="text-text-700">{me.displayName}</strong>{" "}
             ({me.email})
+            {isAdmin && (
+              <span className="ml-2 inline-flex items-center rounded-full border border-blue-600/40 bg-blue-50 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-blue-700">
+                Admin · all projects
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
