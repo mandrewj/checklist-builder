@@ -48,15 +48,15 @@ export async function GET(
     }),
     getMembership(artifact.projectId),
   ]);
-  if (!membership) {
+  // Members can always download; anyone can download from a public project.
+  if (!membership && !project?.isPublic) {
     return new NextResponse("forbidden", { status: 403 });
   }
 
-  // blob://<key> — strip the scheme to get the on-disk key.
-  const key = artifact.blobUrl.replace(/^blob:\/\//, "");
-  const blob = await getBlob(key);
+  // getBlob resolves either a Vercel Blob https URL or a local blob://<key>.
+  const blob = await getBlob(artifact.blobUrl);
   if (!blob) {
-    return new NextResponse("missing on disk", { status: 410 });
+    return new NextResponse("artifact no longer available", { status: 410 });
   }
 
   // Friendly filename. For formats whose extension equals the format name
