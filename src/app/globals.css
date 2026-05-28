@@ -1,0 +1,257 @@
+@import "tailwindcss";
+
+/* =====================================================================
+ * Checklist Builder — design tokens
+ * Ported from Checklist Dashboard.html (prototype). All tokens live here;
+ * Tailwind 4 reads them via the @theme block.
+ * ===================================================================== */
+
+@theme {
+  /* Fonts */
+  --font-sans: var(--font-lato), Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Blue (primary) */
+  --color-blue-50:  #EEF4FF;
+  --color-blue-100: #D9E5FF;
+  --color-blue-200: #B3CBFF;
+  --color-blue-300: #7AA5FF;
+  --color-blue-400: #4783FA;
+  --color-blue-500: #2C7AFB;
+  --color-blue-600: #116dff;
+  --color-blue-700: #0A4FBE;
+  --color-blue-800: #0A3F95;
+  --color-blue-900: #0A2D6B;
+
+  /* Gray */
+  --color-gray-100: #EEF1F2;
+  --color-gray-200: #D9DDDF;
+  --color-gray-300: #B7BDC0;
+  --color-gray-400: #8A9094;
+  --color-gray-500: #6F7478;
+  --color-gray-600: #5f6360;
+  --color-gray-700: #4A4F50;
+  --color-gray-800: #363A3B;
+
+  /* Body text — never pure black */
+  --color-text-100: #F2F2F2;
+  --color-text-200: #D5D5D5;
+  --color-text-300: #A5A5A5;
+  --color-text-400: #6D6F6E;
+  --color-text-500: #404342;
+  --color-text-600: #1F2222;
+  --color-text-700: #080808;
+
+  /* Surfaces — backgrounds white / near-white, never warm */
+  --color-surface-0: #FFFFFF;
+  --color-surface-1: #F8F9FA;
+  --color-surface-2: #F1F3F5;
+  --color-surface-3: #E5E7EB;
+
+  /* Cyan (cite-only attribution) */
+  --color-cyan-400: #3FB6D8;
+  --color-cyan-500: #1F95B8;
+  --color-cyan-600: #0E7693;
+
+  /* Okabe-Ito categorical palette — categorical chart fills only */
+  --color-ok-black:      #000000;
+  --color-ok-orange:     #E69F00;
+  --color-ok-skyblue:    #56B4E9;
+  --color-ok-green:      #009E73;
+  --color-ok-yellow:     #F0E442;
+  --color-ok-blue:       #0072B2;
+  --color-ok-vermillion: #D55E00;
+  --color-ok-purple:     #CC79A7;
+
+  /* Status */
+  --color-success-50:  #ECFDF3;
+  --color-success-600: #067647;
+  --color-success-700: #085D3A;
+  --color-warning-50:  #FFFAEB;
+  --color-warning-600: #B54708;
+  --color-warning-700: #93370D;
+  --color-danger-50:   #FEF3F2;
+  --color-danger-600:  #B42318;
+  --color-danger-700:  #912018;
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(15, 23, 42, 0.04), 0 4px 16px -8px rgba(15, 23, 42, 0.10);
+  --shadow-pop:  0 1px 0 rgba(15, 23, 42, 0.04), 0 12px 32px -12px rgba(15, 23, 42, 0.22);
+
+  /* Tracking */
+  --tracking-tightish: -0.005em;
+
+  /* Background gradient used on workspace pages */
+  --background-image-page: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+
+  /* shadcn semantic tokens — alias to project tokens so shadcn primitives
+   * inherit our palette without modification. Per COMPONENTS.md:
+   * primary=blue-600, secondary=surface-1, card=surface-0, etc. */
+  --color-background: var(--color-surface-0);
+  --color-foreground: var(--color-text-600);
+  --color-card: var(--color-surface-0);
+  --color-card-foreground: var(--color-text-600);
+  --color-popover: var(--color-surface-0);
+  --color-popover-foreground: var(--color-text-600);
+  --color-primary: var(--color-blue-600);
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: var(--color-surface-1);
+  --color-secondary-foreground: var(--color-text-600);
+  --color-muted: var(--color-surface-1);
+  --color-muted-foreground: var(--color-text-400);
+  --color-accent: var(--color-blue-50);
+  --color-accent-foreground: var(--color-blue-800);
+  --color-destructive: var(--color-danger-600);
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: var(--color-surface-3);
+  --color-input: var(--color-surface-3);
+  --color-ring: var(--color-blue-600);
+
+  /* Radii (shadcn references --radius-md in some classes) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Base — Lato body, blue-800 headings, focus ring on every interactive element */
+html, body {
+  font-family: var(--font-sans);
+  color: var(--color-text-600);
+}
+
+body {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: var(--tracking-tightish);
+  color: var(--color-blue-800);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Eyebrow text — used in section headers */
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Section heading rules (40x2 px blue pill / 28x2 px small variant) */
+.rule::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--color-blue-600);
+  margin-top: 8px;
+  border-radius: 2px;
+}
+
+.rule-sm::after {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: var(--color-blue-600);
+  margin-top: 6px;
+  border-radius: 2px;
+}
+
+/* Custom scrollbars */
+.nice-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-gray-200);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.nice-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-300);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* Source attribution chip stripes for placeholder thumbnails */
+.stripes {
+  background-image: repeating-linear-gradient(45deg, #F1F3F5 0 8px, #E5E7EB 8px 16px);
+}
+
+/* Keyboard chip */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-600);
+  background: #FFFFFF;
+  border: 1px solid var(--color-surface-3);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.ringed {
+  box-shadow: 0 0 0 3px rgba(17, 109, 255, 0.16);
+}
+
+.checker-bg {
+  background-image:
+    linear-gradient(45deg, #F1F3F5 25%, transparent 25%),
+    linear-gradient(-45deg, #F1F3F5 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #F1F3F5 75%),
+    linear-gradient(-45deg, transparent 75%, #F1F3F5 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+}
+
+.strip-cell {
+  width: 6px;
+  height: 14px;
+  display: inline-block;
+}
+
+.no-select {
+  user-select: none;
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sheet-enter {
+  animation: slideIn 0.22s ease-out both;
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.18s ease-out both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

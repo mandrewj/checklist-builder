@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>InsectID Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        blue:   { 50:'#EEF4FF', 100:'#D9E5FF', 200:'#B3CBFF', 300:'#7AA5FF',
+                  400:'#4783FA', 500:'#2C7AFB', 600:'#116dff', 700:'#0A4FBE',
+                  800:'#0A3F95', 900:'#0A2D6B' },
+        gray:   { 100:'#EEF1F2', 200:'#D9DDDF', 300:'#B7BDC0', 400:'#8A9094',
+                  500:'#6F7478', 600:'#5f6360', 700:'#4A4F50', 800:'#363A3B' },
+        text:   { 100:'#F2F2F2', 200:'#D5D5D5', 300:'#A5A5A5', 400:'#6D6F6E',
+                  500:'#404342', 600:'#1F2222', 700:'#080808' },
+        surface:{ 0:'#FFFFFF', 1:'#F8F9FA', 2:'#F1F3F5', 3:'#E5E7EB' },
+        cyan:   { 400:'#3FB6D8', 500:'#1F95B8', 600:'#0E7693' },
+        ok:     { black:'#000000', orange:'#E69F00', skyblue:'#56B4E9', green:'#009E73',
+                  yellow:'#F0E442', blue:'#0072B2', vermillion:'#D55E00', purple:'#CC79A7' },
+        success:{ 50:'#ECFDF3', 600:'#067647', 700:'#085D3A' },
+        warning:{ 50:'#FFFAEB', 600:'#B54708', 700:'#93370D' },
+        danger: { 50:'#FEF3F2', 600:'#B42318', 700:'#912018' },
+      },
+      fontFamily: {
+        sans: ['Lato','Helvetica','Arial','ui-sans-serif','system-ui','sans-serif'],
+        mono: ['"JetBrains Mono"','ui-monospace','SFMono-Regular','Menlo','monospace'],
+      },
+      backgroundImage: { 'page': 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)' },
+      boxShadow: {
+        card: '0 1px 0 rgba(15,23,42,0.04), 0 4px 16px -8px rgba(15,23,42,0.10)',
+        pop:  '0 1px 0 rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.22)',
+      },
+      letterSpacing: { tightish: '-0.005em' },
+    }
+  }
+};
+</script>
+<style>
+  html, body { font-family: 'Lato', Helvetica, Arial, sans-serif; color: #1F2222; }
+  body { background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%); min-height: 100vh; }
+  h1,h2,h3,h4 { letter-spacing: -0.005em; color: #0A3F95; }
+  /* Focus ring per style guide */
+  *:focus-visible { outline: 2px solid #116dff; outline-offset: 2px; border-radius: 4px; }
+  /* Eyebrow */
+  .eyebrow { font-size: 11px; letter-spacing: 0.2em; color:#5f6360; text-transform: uppercase; font-weight: 700; }
+  /* Section heading rule (2x40px blue pill) */
+  .rule::after { content:''; display:block; width:40px; height:2px; background:#116dff; margin-top:8px; border-radius:2px; }
+  /* Section heading rule small */
+  .rule-sm::after { content:''; display:block; width:28px; height:2px; background:#116dff; margin-top:6px; border-radius:2px; }
+  /* Custom scrollbars */
+  .nice-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+  .nice-scroll::-webkit-scrollbar-thumb { background: #D9DDDF; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  .nice-scroll::-webkit-scrollbar-thumb:hover { background: #B7BDC0; background-clip: padding-box; border: 2px solid transparent; }
+  /* Source attribution chip stripes for placeholder thumbs */
+  .stripes { background-image: repeating-linear-gradient(45deg, #F1F3F5 0 8px, #E5E7EB 8px 16px); }
+  /* Keyboard chip */
+  kbd { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding: 0 6px;
+        font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color:#1F2222;
+        background:#FFFFFF; border:1px solid #E5E7EB; border-bottom-width:2px; border-radius:4px; }
+  .ringed { box-shadow: 0 0 0 3px rgba(17,109,255,0.16); }
+  .checker-bg { background-image:
+      linear-gradient(45deg, #F1F3F5 25%, transparent 25%),
+      linear-gradient(-45deg, #F1F3F5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #F1F3F5 75%),
+      linear-gradient(-45deg, transparent 75%, #F1F3F5 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+  }
+  /* Sparkline-style strip */
+  .strip-cell { width: 6px; height: 14px; display:inline-block; }
+  /* Disable text-cursor on app shell */
+  .no-select { user-select: none; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  /* Animate sheet */
+  .sheet-enter { animation: slideIn .22s ease-out both; }
+  @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .fade-in { animation: fadeIn .18s ease-out both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+  /* Tight horizontal scrollers */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+</style>
+</head>
+<body class="bg-page text-text-600">
+
+<div id="root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Order: data → util → ui → map → screens → app -->
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/util.jsx"></script>
+<script type="text/babel" src="src/ui.jsx"></script>
+<script type="text/babel" src="src/icons.jsx"></script>
+<script type="text/babel" src="src/map.jsx"></script>
+<script type="text/babel" src="src/screens/signin.jsx"></script>
+<script type="text/babel" src="src/screens/dashboard.jsx"></script>
+<script type="text/babel" src="src/screens/wizard.jsx"></script>
+<script type="text/babel" src="src/screens/overview.jsx"></script>
+<script type="text/babel" src="src/screens/checklist.jsx"></script>
+<script type="text/babel" src="src/screens/species.jsx"></script>
+<script type="text/babel" src="src/screens/conflicts.jsx"></script>
+<script type="text/babel" src="src/screens/manual.jsx"></script>
+<script type="text/babel" src="src/screens/activity.jsx"></script>
+<script type="text/babel" src="src/screens/members.jsx"></script>
+<script type="text/babel" src="src/screens/exports.jsx"></script>
+<script type="text/babel" src="src/screens/settings.jsx"></script>
+<script type="text/babel" src="src/screens/workspace.jsx"></script>
+<script type="text/babel" src="src/app.jsx"></script>
+
+</body>
+</html>
