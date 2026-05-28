@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/button";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
+
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-8 px-8 py-24">
       <header className="flex flex-col gap-4">
@@ -27,12 +31,20 @@ export default function LandingPage() {
       </p>
 
       <div className="flex flex-wrap gap-3 pt-4">
-        <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-          <Link href="/sign-in">Sign in to continue</Link>
-        </Button>
-        <Button asChild variant="outline" size="lg">
-          <Link href="/dashboard">Open dashboard</Link>
-        </Button>
+        {isSignedIn ? (
+          <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+            <Link href="/dashboard">Open dashboard →</Link>
+          </Button>
+        ) : (
+          <>
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/sign-in">Sign in</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/sign-up">Create account</Link>
+            </Button>
+          </>
+        )}
       </div>
     </main>
   );
