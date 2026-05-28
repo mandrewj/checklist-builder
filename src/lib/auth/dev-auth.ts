@@ -119,7 +119,14 @@ export async function requireRole(
  * for projects that are neither public nor visible to the current user.
  */
 export type ProjectAccess =
-  | { kind: "member"; membership: MembershipRow; project: ProjectRow }
+  | {
+      kind: "member";
+      membership: MembershipRow;
+      project: ProjectRow;
+      /** True when access is granted by super-user status rather than a real
+       *  membership row — lets the UI show an "Admin" indicator. */
+      viaAdmin: boolean;
+    }
   | { kind: "public"; project: ProjectRow };
 
 export async function getProjectAccess(
@@ -130,8 +137,33 @@ export async function getProjectAccess(
   });
   if (!project) return null;
 
-  const m = await getMembership(projectId);
-  if (m) return { kind: "member", membership: m, project };
+  const currentUid = await getCurrentUserId();
+  if (currentUid) {
+    // Real membership wins and is never flagged as admin access.
+    const real = await db.query.memberships.findFirst({
+      where: and(
+        eq(memberships.projectId, projectId),
+        eq(memberships.userId, currentUid),
+      ),
+    });
+    if (real) {
+      return { kind: "member", membership: real, project, viaAdmin: false };
+    }
+    // Super-user: synthetic Lead, flagged as admin access.
+    if (await isCurrentUserAdmin()) {
+      return {
+        kind: "member",
+        membership: {
+          projectId,
+          userId: currentUid,
+          role: "Lead",
+          joinedAt: new Date(0),
+        },
+        project,
+        viaAdmin: true,
+      };
+    }
+  }
   if (project.isPublic) return { kind: "public", project };
   return null;
 }

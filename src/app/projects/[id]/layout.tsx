@@ -34,6 +34,9 @@ export default async function ProjectLayout({
   // For public viewers we use "Public" as a synthetic, mutation-blocked role.
   const role: "Lead" | "Contributor" | "Reviewer" | "Public" =
     access.kind === "member" ? access.membership.role : "Public";
+  // Whether the caller is here via super-user status rather than a real
+  // membership — drives the "Admin" badge in the top bar.
+  const viaAdmin = access.kind === "member" && access.viaAdmin;
 
   // Sidebar/top-bar data — kept in parallel.
   const [members, openConflicts, citeOnlyRecords] = await Promise.all([
@@ -69,6 +72,7 @@ export default async function ProjectLayout({
         <ProjectTopBar
           project={project}
           role={role}
+          viaAdmin={viaAdmin}
           members={members}
         />
       }

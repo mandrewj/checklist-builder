@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Lock } from "lucide-react";
+import { Globe, Lock, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AvatarStack } from "@/components/insectid/avatar-stack";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,9 @@ export type ViewerRole = MembershipRow["role"] | "Public";
 export interface ProjectTopBarProps {
   project: ProjectRow;
   role: ViewerRole;
+  /** True when the viewer is here via super-user status, not a real
+   *  membership. Shows an "Admin" badge in place of the role badge. */
+  viaAdmin?: boolean;
   members: ReadonlyArray<Pick<UserRow, "initials" | "displayName">>;
 }
 
@@ -27,7 +30,12 @@ function roleBadgeVariant(role: ViewerRole) {
   }
 }
 
-export function ProjectTopBar({ project, role, members }: ProjectTopBarProps) {
+export function ProjectTopBar({
+  project,
+  role,
+  viaAdmin,
+  members,
+}: ProjectTopBarProps) {
   const locked = !!project.lockedAt;
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-surface-3 bg-surface-0 px-6">
@@ -42,9 +50,20 @@ export function ProjectTopBar({ project, role, members }: ProjectTopBarProps) {
         <h1 className="truncate text-sm font-bold text-text-700">
           {project.name}
         </h1>
-        <Badge variant={roleBadgeVariant(role)} className="shrink-0">
-          {role}
-        </Badge>
+        {viaAdmin ? (
+          <Badge
+            variant="default"
+            className="shrink-0 gap-1 bg-blue-800 text-white"
+            title="You are viewing this project as a super-user, not a member. You have full Lead-level control."
+          >
+            <ShieldCheck className="size-3" aria-hidden />
+            Admin
+          </Badge>
+        ) : (
+          <Badge variant={roleBadgeVariant(role)} className="shrink-0">
+            {role}
+          </Badge>
+        )}
         {locked && (
           <Badge
             variant="outline"
