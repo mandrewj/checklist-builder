@@ -1,13 +1,19 @@
 /**
- * pnpm seed:adopt <clerk-user-id>
+ * pnpm seed:adopt <clerk-user-id> [email] [display-name]
  *
  * Transfers ownership of every project from the placeholder `system` user
  * to the named Clerk user, and grants them Lead membership on each project.
  * Run once after the first real user signs in via Clerk so they inherit
  * the seed Tenebrionidae project.
+ *
+ * If the user row doesn't exist yet (e.g. they signed up before the Clerk
+ * webhook was configured), it is created. Pass email + display-name to make
+ * the row accurate; otherwise placeholders are used and the webhook will
+ * correct them on the next user.updated event.
  */
 
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: [".env.local", ".env"] });
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { eq, sql } from "drizzle-orm";
@@ -15,8 +21,10 @@ import ws from "ws";
 import * as schema from "../src/lib/db/schema";
 
 const clerkId = process.argv[2];
+const argEmail = process.argv[3];
+const argName = process.argv[4];
 if (!clerkId) {
-  console.error("usage: pnpm seed:adopt <clerk-user-id>");
+  console.error('usage: pnpm seed:adopt <clerk-user-id> [email] ["Display Name"]');
   process.exit(1);
 }
 
@@ -34,16 +42,27 @@ async function main() {
   const pool = new Pool({ connectionString: url });
   const db = drizzle({ client: pool, schema, casing: "snake_case" });
 
-  // Verify the Clerk user has been mirrored locally (the webhook should have
-  // done this on user.created).
-  const user = await db.query.users.findFirst({
+  // Normally the Clerk webhook mirrors the user on user.created. If the row
+  // isn't there yet (signed up before the webhook was configured), create a
+  // minimal one — the webhook will correct email/name on the next update.
+  let user = await db.query.users.findFirst({
     where: eq(schema.users.id, clerkId!),
   });
   if (!user) {
-    console.error(
-      `[adopt] no user with id "${clerkId}" in users table — make sure the user has signed in (the Clerk webhook seeds them).`,
-    );
-    process.exit(1);
+    const email = argEmail ?? `${clerkId}@placeholder.local`;
+    const displayName = argName ?? argEmail ?? "Lab Lead";
+    const initials = displayName
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "ME";
+    console.log(`[adopt] user ${clerkId} not found — creating row (${displayName})`);
+    const [created] = await db
+      .insert(schema.users)
+      .values({ id: clerkId!, email, displayName, initials })
+      .returning();
+    user = created;
   }
 
   // Re-point ownership.

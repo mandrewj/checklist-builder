@@ -10,7 +10,8 @@
  * Safe to re-run; every table is truncated in FK-safe order first.
  */
 
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: [".env.local", ".env"] });
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool, neonConfig } from "@neondatabase/serverless";
