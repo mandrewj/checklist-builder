@@ -5,6 +5,9 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/clerk/webhook",
+  // Vercel Cron invokes this without a Clerk session; it self-gates on
+  // CRON_SECRET (Bearer token) instead.
+  "/api/cron/(.*)",
   // Allow anonymous viewing of public projects + their static assets.
   "/projects/:id",
   "/projects/:id/(.*)",
