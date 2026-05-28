@@ -61,15 +61,26 @@ export function RegionChoropleth(props: RegionChoroplethProps) {
     [props.regionCodes],
   );
 
-  const [fc, setFc] = useState<RegionFeatureCollection | null>(null);
-  const [outlines, setOutlines] = useState<RegionFeatureCollection | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  // Key the resolved geometry by the region set it was loaded for. While the
+  // key doesn't match the current request, we render loading — this avoids
+  // resetting state synchronously inside the effect (which causes cascading
+  // renders) while still clearing stale maps when regionCodes change.
+  const wantKey = useMemo(
+    () => `${usCodes.join(",")}|${caCodes.join(",")}`,
+    [usCodes, caCodes],
+  );
+
+  type Loaded =
+    | {
+        key: string;
+        fc: RegionFeatureCollection;
+        outlines: RegionFeatureCollection;
+      }
+    | { key: string; error: string };
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setErr(null);
-    setFc(null);
-    setOutlines(null);
 
     async function build(): Promise<{
       fc: RegionFeatureCollection;
@@ -128,20 +139,29 @@ export function RegionChoropleth(props: RegionChoroplethProps) {
     build().then(
       (out) => {
         if (!cancelled) {
-          setFc(out.fc);
-          setOutlines(out.outlines);
+          setLoaded({ key: wantKey, fc: out.fc, outlines: out.outlines });
         }
       },
       (e: unknown) => {
         if (!cancelled) {
-          setErr(e instanceof Error ? e.message : "failed to load region geometry");
+          setLoaded({
+            key: wantKey,
+            error:
+              e instanceof Error ? e.message : "failed to load region geometry",
+          });
         }
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [usCodes, caCodes]);
+  }, [usCodes, caCodes, wantKey]);
+
+  // Only trust the resolved state if it matches the current request.
+  const ready = loaded?.key === wantKey ? loaded : null;
+  const err = ready && "error" in ready ? ready.error : null;
+  const fc = ready && "fc" in ready ? ready.fc : null;
+  const outlines = ready && "fc" in ready ? ready.outlines : null;
 
   if (err) {
     return (

@@ -83,11 +83,13 @@ export function NewProjectForm({
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!taxonQuery.trim()) {
-      setSuggestions(null);
-      return;
-    }
     debounceRef.current = setTimeout(async () => {
+      // Empty query clears suggestions (handled here, inside the debounced
+      // callback, so we never setState synchronously in the effect body).
+      if (!taxonQuery.trim()) {
+        setSuggestions(null);
+        return;
+      }
       setSuggestLoading(true);
       try {
         const res = await fetch(

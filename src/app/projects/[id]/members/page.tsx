@@ -83,17 +83,12 @@ export default async function MembersPage({ params }: MembersPageProps) {
 
         {isLead && (
           <div className="rounded-xl border border-dashed border-surface-3 bg-surface-1 px-6 py-8">
-            <span className="eyebrow">Invite by email</span>
+            <span className="eyebrow">Adding members</span>
             <p className="mt-2 text-sm text-text-500">
-              Invitation flow lands once Clerk is wired. It will use Clerk's
-              <code className="mx-1 rounded bg-surface-3 px-1 py-0.5 font-mono text-xs">
-                invitations.createInvitation
-              </code>
-              API and stamp the new member's role via{" "}
-              <code className="mx-1 rounded bg-surface-3 px-1 py-0.5 font-mono text-xs">
-                publicMetadata
-              </code>
-              .
+              Invite people from the Clerk dashboard (Users &rarr; Invitations).
+              They appear here automatically on their first sign-in via the
+              Clerk webhook. An in-app add-and-assign-role control is a planned
+              enhancement.
             </p>
           </div>
         )}
